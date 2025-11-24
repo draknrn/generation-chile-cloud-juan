@@ -12,6 +12,7 @@ import requests
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 import glob
+import json
 
 try:
     import mutagen
@@ -46,6 +47,9 @@ class MusicDownloader:
                 }
             ],
         }
+        # If ffmpeg is available on the system, tell yt-dlp where to find it
+        if self.ffmpeg_path:
+            opts["ffmpeg_location"] = self.ffmpeg_path
         return opts
 
     def download_youtube(self, url: str) -> Optional[str]:
@@ -78,9 +82,34 @@ class MusicDownloader:
                 url,
             ]
             try:
+                # Try to get metadata (title/artist) from yt-dlp before downloading, so we can tag with video title
+                info_title = None
+                info_artist = None
+                try:
+                    cmd_info = ["yt-dlp", "-j", "--no-warnings", url]
+                    proc = subprocess.run(cmd_info, check=True, capture_output=True, text=True)
+                    out = proc.stdout.strip()
+                    if out:
+                        # yt-dlp may return multiple json objects when given search; try to parse the first
+                        # If output contains multiple lines, take the last valid json
+                        last_json = out.splitlines()[-1]
+                        info = json.loads(last_json)
+                        info_title = info.get("title")
+                        info_artist = info.get("artist") or info.get("uploader")
+                except Exception:
+                    # If metadata extraction fails, continue without it
+                    info_title = None
+                    info_artist = None
+
+                # If we know ffmpeg path, provide it to yt-dlp subprocess as well
+                if self.ffmpeg_path:
+                    cmd.extend(["--ffmpeg-location", self.ffmpeg_path])
                 subprocess.run(cmd, check=True)
                 # We cannot easily know final filename without parsing yt-dlp output; try to find newest mp3
                 filepath = self._find_newest_mp3()
+                if filepath and mutagen and EasyID3 and info_title:
+                    # Tag using the video title (not the user input)
+                    self._tag_file(filepath, title=info_title, artist=info_artist)
                 return filepath or self.output_dir
             except Exception as e:
                 print("Error ejecutando yt-dlp en subprocess:", e)

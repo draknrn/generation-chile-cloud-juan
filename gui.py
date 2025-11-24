@@ -21,8 +21,11 @@ def start_gui():
     FG = "#D4AF37"
     BUTTON_BG = "#1e1e1e"
 
-    sg.theme_background_color(BG)
-    sg.theme_text_color(FG)
+    # Set a base theme and rely on element-level colors
+    try:
+        sg.theme('Dark')
+    except Exception:
+        pass
 
     layout = [
         [sg.Text('Music Downloader', font=('Any', 20), justification='center', expand_x=True, pad=(10, 10))],
