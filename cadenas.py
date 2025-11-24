@@ -1,0 +1,10 @@
+nom=input("Hola, ¿Cuál es tu nombre?: ")
+nom=nom.title()
+ap=input(f"¡Encantado de conocerte, {nom}! ¿Cuál es tu apellido?: ")
+ap=ap.title()
+nom_completo=nom+" "+ap
+print(f"¡Genial, {nom_completo}! Vamos a planear tu viaje.")
+ciu=input("¿A qué ciudad viajas? : ")
+print(f"¡Hola, {nom}! Bienvenido.")
+fech=input("¿En qué fecha viajas? (dd/mm/aaaa): ")
+print(f"Perfecto, {nom_completo}. Tu viaje a {ciu} está programado para el {fech}. ¡Que tengas un buen viaje!")
